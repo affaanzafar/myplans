@@ -123,6 +123,7 @@ try {
   assert.ok(await waitFor(() => headerText(doc).includes("0 / 51")), "fresh PCM is 0 / 51");
   assert.equal(doc.querySelectorAll("main [aria-pressed]").length, 535, "535 tiles rendered");
   assert.equal(doc.querySelectorAll("main [aria-expanded]").length, 64, "64 surah headings");
+  assert.equal(doc.querySelectorAll('[role="tab"]').length, 4, "4 tabs");
 
   // --- Ticking a page ---------------------------------------------------------
   step("tick page 322");
@@ -205,6 +206,34 @@ try {
   assert.ok(!logText.includes("(Hifdh)"), "no Hifdh entries yet");
   assert.ok(logText.includes("Kinematics 1D & Vectors, Mole Concept (PCM)"), "curriculum order");
 
+  // --- Plan tab -------------------------------------------------------------------
+  step("Plan tab");
+  const planTab = [...doc.querySelectorAll('[role="tab"]')].find((b) => b.textContent === "Plan");
+  planTab.click();
+  assert.ok(
+    await waitFor(() => doc.querySelectorAll("main input[type='checkbox']").length === 51),
+    "plan renders all 51 chapters",
+  );
+  const planText = () => doc.querySelector("main").textContent.replace(/\s+/g, " ");
+  assert.ok(planText().includes("95 days"), "summary shows 95 days");
+  assert.ok(
+    planText().includes("28 Sep") && planText().includes("31 Dec"),
+    "28 Sep – 31 Dec range shown",
+  );
+  for (const month of ["September", "October", "November", "December"]) {
+    assert.ok(planText().includes(month), `month section: ${month}`);
+  }
+  assert.equal(
+    doc.querySelectorAll("[data-ribbon] > div > span").length,
+    51,
+    "ribbon has 51 segments",
+  );
+  // toggling from the plan updates the shared ledger
+  doc.querySelector('input[aria-label="Gravitation"]').click();
+  assert.ok(await waitFor(() => headerText(doc).includes("3 / 51")), "plan toggle -> 3 / 51");
+  const gravRow = doc.querySelector('input[aria-label^="Gravitation"]').closest("li");
+  assert.match(gravRow.textContent, /\d{1,2} [A-Z][a-z]{2}/, "done date chip in plan row");
+
   // --- Reload: state comes back from localStorage --------------------------------
   step("reload from saved state");
   const persisted = dom.window.localStorage.getItem("ledger");
@@ -213,7 +242,7 @@ try {
   dom = await openPage({ seed: persisted });
   doc = dom.window.document;
   assert.ok(await waitFor(() => headerText(doc).includes("0 / 535")), "Hifdh still 0 / 535");
-  assert.ok(await waitFor(() => headerText(doc).includes("2 / 51")), "PCM restored to 2 / 51");
+  assert.ok(await waitFor(() => headerText(doc).includes("3 / 51")), "PCM restored to 3 / 51");
   const pcmTab2 = [...doc.querySelectorAll('[role="tab"]')].find((b) => b.textContent === "PCM");
   pcmTab2.click();
   assert.ok(

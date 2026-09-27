@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Header from "./Header";
 import HifdhTab from "./HifdhTab";
 import PcmTab from "./PcmTab";
+import PlanTab from "./PlanTab";
 import LogTab from "./LogTab";
 import Footer from "./Footer";
 import {
@@ -15,11 +16,12 @@ import {
   type LedgerState,
 } from "@/lib/state";
 
-type TabId = "hifdh" | "pcm" | "log";
+type TabId = "hifdh" | "pcm" | "plan" | "log";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "hifdh", label: "Hifdh" },
   { id: "pcm", label: "PCM" },
+  { id: "plan", label: "Plan" },
   { id: "log", label: "Log" },
 ];
 
@@ -57,33 +59,43 @@ export default function LedgerApp() {
     <div className="flex min-h-screen flex-col">
       <div className="mx-auto w-full max-w-3xl flex-1 px-5 sm:px-8">
         <Header hifdhDone={hifdhDone} pcmDone={pcmDone} />
+      </div>
 
-        <nav className="mt-10 flex gap-7 border-b border-hairline" aria-label="Sections">
-          {TABS.map((t) => {
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(t.id)}
-                className={`-mb-px border-b-2 pb-3 pt-1 text-[14px] transition-colors duration-150 ${
-                  active
-                    ? "border-ink font-medium text-ink"
-                    : "border-transparent text-muted hover:text-ink"
-                }`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
+      <nav
+        className="sticky top-0 z-30 border-b border-hairline/70 bg-paper/85 py-2.5 backdrop-blur-md"
+        aria-label="Sections"
+      >
+        <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
+          <div className="inline-flex gap-1 rounded-full border border-hairline bg-paperdeep p-1">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(t.id)}
+                  className={`rounded-full px-4 py-1.5 text-[13.5px] transition-all duration-150 ${
+                    active
+                      ? "bg-card font-medium text-ink shadow-soft"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
 
-        <main className="py-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-5 sm:px-8">
+        <main className="py-8 sm:py-10">
           <div key={tab} className="tab-content">
             {tab === "hifdh" && <HifdhTab pages={current.pages} onToggle={onTogglePage} />}
             {tab === "pcm" && <PcmTab chapters={current.chapters} onToggle={onToggleChapter} />}
+            {tab === "plan" && <PlanTab chapters={current.chapters} onToggle={onToggleChapter} />}
             {tab === "log" && <LogTab state={current} />}
           </div>
         </main>

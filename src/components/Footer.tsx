@@ -10,7 +10,7 @@ interface FooterProps {
 }
 
 const buttonClass =
-  "rounded-lg border border-hairline bg-card px-3.5 py-1.5 text-[13px] text-ink/80 transition-colors duration-150 hover:border-hairlinedark hover:text-ink active:bg-paperdeep disabled:opacity-50";
+  "rounded-full border border-hairline bg-card px-4 py-1.5 text-[13px] text-ink/80 shadow-soft transition-colors duration-150 hover:border-hairlinedark hover:text-ink active:bg-paperdeep disabled:opacity-50";
 
 export default function Footer({ state, onRestore }: FooterProps) {
   const fileInput = useRef<HTMLInputElement>(null);

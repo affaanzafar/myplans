@@ -31,51 +31,67 @@ Backup and Restore live in the footer. Backup downloads
 Restore opens a file picker, validates the file strictly (version, page
 numbers, chapter names, real calendar dates), and only then loads it.
 
-## The data, and its invariants
+## The tabs
 
 ### Hifdh
-
-Already memorized, and therefore not tracked: pages 293–321 (Al-Kahf, Maryam,
-Taha) and 565–604 (Surah 68–114). Tracked: pages 1–292 and 322–564 — exactly
-**535 pages**, shown as tiles grouped under 64 surah headings (Madani
-604-page layout).
-
-Boundary pages are shared between surahs (Al-Baqarah ends on 49 and Aal Imran
-begins... on 50; An-Nisa and Al-Ma'idah both touch 106). The rule: pages are
-assigned to the **first** surah whose range includes them, so every page
-appears exactly once — page 106 shows under An-Nisa only.
-
-**Invariant: the Hifdh tab displays exactly 535 tiles** (Al-Baqarah shows 48,
-pages 2–49). This is asserted at module load in `src/lib/surahs.ts` — in dev,
-at build time, in the browser, and in the test suite — and the app fails
-loudly if it is ever wrong.
+All 535 remaining pages (1–292 and 322–564) as tiles under 64 surah cards.
+Already memorized, not tracked: pages 293–321 (Al-Kahf, Maryam, Taha) and
+565–604 (Surah 68–114). Boundary pages are shared between surahs; each page
+belongs to the **first** surah whose range includes it, so page 106 shows
+under An-Nisa only. **Invariant: exactly 535 tiles** (Al-Baqarah: 48 tiles,
+pages 2–49), asserted at module load in dev/build/runtime and in the tests.
 
 ### PCM
+The 51 chapters — Physics 17, Chemistry 18 (Physical 7 / Inorganic 6 /
+Organic 5), Mathematics 16 — with per-subject counters, completion dates,
+and a small three-dot difficulty rating on every chapter.
 
-Exactly **51 chapters**: Physics 17; Chemistry 18 (Physical 7, Inorganic 6,
-Organic 5); Mathematics 16 (Algebra 6, Sets-Functions-Calculus 6,
-Vectors-Coordinate Geometry 4). Asserted the same way in
-`src/lib/chapters.ts`.
+### Plan
+All 51 chapters divided across **28 September – 31 December 2026** — 95 days
+— weighted by difficulty:
+
+- **Hard** chapters get 3 days (2 when compact): 14 chapters
+- **Medium** chapters get 2 days (1 when compact): 26 chapters
+- **Easy** chapters get 1 day: 11 chapters
+
+The windows tile the period exactly: Physics runs 28 Sep – 1 Nov, Chemistry
+2 Nov – 3 Dec, Mathematics 4 Dec – 31 Dec. A ribbon at the top shows the
+whole quarter at a glance — each segment is a chapter, sized by its days and
+coloured by difficulty, filling in as chapters are completed; a small "today"
+marker appears on the current window from 28 Sep onwards. Chapters can be
+ticked off straight from the plan. It is a reference for pacing, not a
+deadline: the app never compares you against it.
+
+### Log
+Everything recorded, grouped by day, newest first, with bookish page ranges
+(`Pages 322–324, 330 (Hifdh) · Mole Concept (PCM)`).
 
 ## Tests
 
 ```bash
-npm test              # data invariants, dates, state validation, log grouping
+npm test              # data invariants: Hifdh, PCM, the plan, dates, state
+                      # validation, log grouping
 npm run test:smoke    # end-to-end against ./out (run after npm run build):
-                      # clicks tiles and checkboxes in a real DOM, checks
-                      # counters, collapse, the Log, reload persistence,
+                      # clicks tiles, checkboxes and plan rows in a real DOM,
+                      # checks counters, collapse, the Log, reload persistence,
                       # and corrupt-storage recovery
 npm run typecheck
 ```
 
+## Design
+
+Warm paper, modern finish: a sticky glass tab bar with a segmented control,
+soft-shadowed stationery cards, self-hosted Fraunces (variable serif, SIL
+OFL 1.1 — license in `src/app/fonts/`) over the system sans, tabular
+numerals for every counter, hairline borders, and calm ≤200ms motion. Fully
+responsive; thumb-sized tiles on a phone. No emoji, no gamification.
+
 ## Notes on choices
 
 - Dates are recorded as the user's **local** date (`YYYY-MM-DD`, never UTC)
-  and displayed as `19 Feb`. The Log groups by day, newest first, and
-  compresses runs of pages bookishly: `Pages 322–324, 330`.
-- The serif is [Fraunces](https://github.com/undercasetype/Fraunces) (SIL
-  OFL 1.1; license in `src/app/fonts/`), self-hosted as a variable font via
-  `next/font/local` so builds and the app itself work with no network.
-  System sans carries the UI text; all counters use tabular numerals.
+  and displayed as `19 Feb`.
 - Tapping a tile or checkbox records today; tapping again erases it. That is
   the entire interaction model.
+- The plan's difficulty ratings are JEE consensus calls, hardcoded in
+  `src/lib/plan.ts`; the schedule is derived from them, never stored — so it
+  can be tuned in one place and every invariant re-asserts itself.

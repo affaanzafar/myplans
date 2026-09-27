@@ -16,7 +16,24 @@ import {
   isRemainingPage,
 } from "../src/lib/surahs";
 import { SUBJECTS, ALL_CHAPTERS, CHAPTER_SET, PCM_TOTAL } from "../src/lib/chapters";
-import { isValidDateKey, formatShort, formatHeading, toDateKey } from "../src/lib/dates";
+import {
+  isValidDateKey,
+  formatShort,
+  formatHeading,
+  toDateKey,
+  addDaysKey,
+  diffDays,
+} from "../src/lib/dates";
+import {
+  PLAN,
+  PLAN_START,
+  PLAN_END,
+  PLAN_TOTAL_DAYS,
+  PLAN_STATS,
+  DIFFICULTY,
+  PLAN_MONTHS,
+  formatWindow,
+} from "../src/lib/plan";
 import { isValidState, emptyState, togglePage, toggleChapter } from "../src/lib/state";
 import { buildLogDays, formatPageList } from "../src/lib/log";
 
@@ -191,6 +208,92 @@ assert.deepEqual(days[1].pages, []);
 assert.deepEqual(days[2].pages, [2]);
 assert.deepEqual(days[2].chapters, []);
 
+// --- The plan: 51 chapters across 28 Sep – 31 Dec 2026 (95 days) ---------------
+
+assert.equal(PLAN_START, "2026-09-28");
+assert.equal(PLAN_END, "2026-12-31");
+assert.equal(PLAN_TOTAL_DAYS, 95);
+assert.equal(diffDays(PLAN_START, PLAN_END), 94, "95 days inclusive");
+assert.equal(addDaysKey("2026-09-30", 1), "2026-10-01");
+assert.equal(addDaysKey("2026-12-31", 1), "2027-01-01");
+assert.equal(diffDays("2026-02-28", "2026-03-01"), 1, "2026 is not a leap year");
+
+// every chapter rated, and nothing extra
+assert.equal(Object.keys(DIFFICULTY).length, 51, "51 difficulty ratings");
+assert.deepEqual(Object.keys(DIFFICULTY).sort(), [...ALL_CHAPTERS].sort(), "ratings match chapters exactly");
+
+// the difficulty mix
+assert.equal(PLAN_STATS.hard, 14);
+assert.equal(PLAN_STATS.medium, 26);
+assert.equal(PLAN_STATS.easy, 11);
+assert.equal(PLAN_STATS.hard + PLAN_STATS.medium + PLAN_STATS.easy, 51);
+
+// the windows
+assert.equal(PLAN.length, 51);
+let plannedDays = 0;
+for (let i = 0; i < PLAN.length; i += 1) {
+  const e = PLAN[i];
+  plannedDays += e.days;
+  assert.ok(e.days >= 1 && e.days <= 3, `${e.chapter}: ${e.days} days out of range`);
+  assert.equal(diffDays(e.start, e.end), e.days - 1, `window length for ${e.chapter}`);
+  if (i > 0) {
+    assert.equal(PLAN[i - 1].end, addDaysKey(e.start, -1), `windows contiguous at ${e.chapter}`);
+  }
+  if (e.difficulty === "easy") assert.equal(e.days, 1, `easy chapters get 1 day: ${e.chapter}`);
+  if (e.difficulty === "medium") assert.ok(e.days <= 2, `medium chapters get at most 2: ${e.chapter}`);
+  if (e.difficulty === "hard") assert.ok(e.days >= 2, `hard chapters get at least 2: ${e.chapter}`);
+}
+assert.equal(plannedDays, 95, "the plan spans exactly 95 days");
+assert.equal(PLAN[0].start, "2026-09-28", "plan starts 28 Sep");
+assert.equal(PLAN[PLAN.length - 1].end, "2026-12-31", "plan ends 31 Dec");
+
+// harder chapters get more time, thoroughly
+const avgDays = (d: "hard" | "medium" | "easy") => {
+  const es = PLAN.filter((e) => e.difficulty === d);
+  return es.reduce((s, e) => s + e.days, 0) / es.length;
+};
+assert.ok(avgDays("hard") > avgDays("medium"), "hard > medium on average");
+assert.ok(avgDays("medium") > avgDays("easy"), "medium > easy on average");
+
+// spot-checks of the schedule
+const entryOf = (name: string) => {
+  const e = PLAN.find((x) => x.chapter === name);
+  assert.ok(e, `chapter planned: ${name}`);
+  return e;
+};
+const first = entryOf("Kinematics 1D & Vectors");
+assert.equal(first.start, "2026-09-28");
+assert.equal(first.end, "2026-09-28");
+assert.equal(first.days, 1);
+assert.equal(first.difficulty, "easy");
+
+const rotation = entryOf("Rotational Motion (Rigid Bodies)");
+assert.equal(rotation.days, 3);
+assert.equal(rotation.start, "2026-10-09");
+assert.equal(rotation.end, "2026-10-11");
+
+assert.equal(entryOf("Modern Physics & Semiconductors").end, "2026-11-01", "physics finishes 1 Nov");
+assert.equal(
+  entryOf("Aldehydes, Ketones & Carboxylic Acids").end,
+  "2026-12-03",
+  "chemistry finishes 3 Dec",
+);
+const last = entryOf("Conic Sections, Probability & Statistics");
+assert.equal(last.start, "2026-12-29");
+assert.equal(last.end, "2026-12-31", "the plan ends exactly on 31 Dec");
+
+// months crossed
+assert.deepEqual(
+  PLAN_MONTHS.map((m) => m.label),
+  ["September", "October", "November", "December"],
+);
+assert.equal(PLAN_MONTHS[0].offset, 0);
+
+// window formatting
+assert.equal(formatWindow("2026-09-28", "2026-09-28"), "28 Sep");
+assert.equal(formatWindow("2026-10-14", "2026-10-16"), "14\u201316 Oct");
+assert.equal(formatWindow("2026-09-30", "2026-10-02"), "30 Sep \u2013 2 Oct");
+
 console.log(
-  "All invariants hold — Hifdh: 535 page tiles across 64 surah sections (Al-Baqarah 2–49, 48 tiles); PCM: 51 chapters (17 + 18 + 16).",
+  "All invariants hold — Hifdh: 535 page tiles across 64 surah sections (Al-Baqarah 2–49, 48 tiles); PCM: 51 chapters (17 + 18 + 16); Plan: 51 chapters across 95 days, 28 Sep – 31 Dec 2026 (14 hard · 26 medium · 11 easy).",
 );

@@ -26,10 +26,10 @@ function PageTile({
         aria-pressed={done}
         aria-label={done ? `Page ${page}, memorised ${formatShort(date)}` : `Page ${page}`}
         onClick={() => onToggle(page)}
-        className={`aspect-square w-full rounded-[9px] border text-[13px] tabular-nums transition-colors duration-150 ${
+        className={`aspect-square w-full rounded-[10px] border text-[13px] tabular-nums transition duration-150 active:scale-[0.96] ${
           done
-            ? "border-hifdh bg-hifdh text-white hover:border-hifdhdeep hover:bg-hifdhdeep active:bg-hifdhdeep"
-            : "border-hairline bg-card text-muted hover:border-hairlinedark hover:text-ink active:bg-paperdeep"
+            ? "border-hifdh bg-hifdh text-white shadow-soft hover:border-hifdhdeep hover:bg-hifdhdeep"
+            : "border-hairline bg-card text-muted hover:-translate-y-[1px] hover:border-hairlinedark hover:text-ink hover:shadow-soft active:bg-paperdeep"
         }`}
       >
         {page}
@@ -37,7 +37,7 @@ function PageTile({
       {done && (
         <span
           role="tooltip"
-          className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-[3px] text-[11px] tabular-nums text-paper opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100"
+          className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-[3px] text-[11px] tabular-nums text-paper opacity-0 shadow-soft transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100"
         >
           {formatShort(date)}
         </span>
@@ -77,13 +77,19 @@ export default function HifdhTab({ pages, onToggle }: HifdhTabProps) {
         const open = !collapsed.has(section.name);
 
         return (
-          <section key={section.name} aria-label={section.name} className={i === 0 ? "" : "mt-9"}>
+          <section
+            key={section.name}
+            aria-label={section.name}
+            className={`card p-4 transition-colors duration-200 sm:p-5 ${i === 0 ? "" : "mt-4"} ${
+              complete ? "border-hifdh/30" : ""
+            }`}
+          >
             <button
               type="button"
               onClick={() => toggleCollapse(section.name)}
               aria-expanded={open}
               aria-controls={`surah-${i}`}
-              className="-mx-2 flex w-[calc(100%+1rem)] items-baseline gap-3 rounded-lg px-2 py-1.5 text-left transition-colors duration-150 hover:bg-paperdeep"
+              className="flex w-full items-baseline gap-3 rounded-lg px-1.5 py-1 text-left transition-colors duration-150 hover:bg-paperdeep/60"
             >
               <span className="font-serif text-[19px] font-medium leading-snug text-ink">
                 {section.name}

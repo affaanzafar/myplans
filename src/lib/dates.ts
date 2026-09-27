@@ -31,6 +31,34 @@ export function todayKey(): string {
   return toDateKey(new Date());
 }
 
+/** Parse a YYYY-MM-DD key as a local Date (midnight). */
+export function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Add whole (possibly negative) days to a YYYY-MM-DD key. */
+export function addDaysKey(key: string, days: number): string {
+  const date = parseDateKey(key);
+  date.setDate(date.getDate() + days);
+  return toDateKey(date);
+}
+
+/** Whole days from `from` to `to` (negative when `to` is earlier). */
+export function diffDays(from: string, to: string): number {
+  return Math.round((parseDateKey(to).getTime() - parseDateKey(from).getTime()) / 86_400_000);
+}
+
+/** Day of month (1–31) from a key. */
+export function dayOfMonth(key: string): number {
+  return Number(key.slice(8, 10));
+}
+
+/** "Jan"–"Dec" from a key. */
+export function monthShort(key: string): string {
+  return MONTHS[Number(key.slice(5, 7)) - 1];
+}
+
 /** True iff value is a real calendar date written as YYYY-MM-DD. */
 export function isValidDateKey(value: unknown): value is string {
   if (typeof value !== "string") return false;
