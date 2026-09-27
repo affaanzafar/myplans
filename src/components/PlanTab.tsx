@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import {
   PLAN,
+  PLAN_DAYS,
   PLAN_MONTHS,
   PLAN_STATS,
   PLAN_START,
@@ -14,10 +15,12 @@ import {
 } from "@/lib/plan";
 import { PCM_TOTAL } from "@/lib/chapters";
 import { diffDays, formatShort, todayKey } from "@/lib/dates";
+import { slotKey } from "@/lib/state";
 
 interface PlanTabProps {
   chapters: Record<string, string>;
-  onToggle: (chapter: string) => void;
+  planDays: Record<string, string>;
+  onToggleDay: (chapter: string, index: number) => void;
 }
 
 const DOT: Record<Difficulty, string> = {
@@ -26,94 +29,122 @@ const DOT: Record<Difficulty, string> = {
   easy: "bg-difficulty-easy",
 };
 
+const CHIP_DONE: Record<Difficulty, string> = {
+  hard: "border-difficulty-hard bg-difficulty-hard hover:border-difficulty-harddeep hover:bg-difficulty-harddeep",
+  medium:
+    "border-difficulty-medium bg-difficulty-medium hover:border-difficulty-mediumdeep hover:bg-difficulty-mediumdeep",
+  easy: "border-difficulty-easy bg-difficulty-easy hover:border-difficulty-easydeep hover:bg-difficulty-easydeep",
+};
+
 const TAG: Record<Difficulty, string> = {
   hard: "bg-difficulty-hardtint text-difficulty-hard",
   medium: "bg-difficulty-mediumtint text-difficulty-medium",
   easy: "bg-difficulty-easytint text-difficulty-easy",
 };
 
-function PlanRow({
-  entry,
-  date,
-  today,
-  onToggle,
-}: {
+interface DayChipProps {
   entry: PlanEntry;
+  index: number;
   date: string | undefined;
-  today: boolean;
-  onToggle: (chapter: string) => void;
-}) {
+  suggested: boolean;
+  onToggle: (chapter: string, index: number) => void;
+}
+
+function DayChip({ entry, index, date, suggested, onToggle }: DayChipProps) {
   const done = date !== undefined;
   return (
-    <li>
-      <label
-        className={`flex cursor-pointer select-none flex-wrap items-center gap-x-3.5 gap-y-1.5 rounded-xl px-2.5 py-3 transition-colors duration-150 hover:bg-paperdeep/60 ${
-          today ? "bg-paperdeep/50" : ""
+    <span className="group relative">
+      <button
+        type="button"
+        aria-pressed={done}
+        aria-label={`${entry.chapter}, day ${index} of ${entry.days}`}
+        onClick={() => onToggle(entry.chapter, index)}
+        className={`h-9 w-9 rounded-[9px] border text-[11px] tabular-nums transition duration-150 active:scale-[0.96] ${
+          suggested && !done ? "ring-2 ring-ink/25 ring-offset-1 ring-offset-card" : ""
+        } ${
+          done
+            ? `${CHIP_DONE[entry.difficulty]} text-white shadow-soft`
+            : "border-hairline bg-card text-muted hover:border-hairlinedark hover:text-ink"
         }`}
       >
-        <input
-          type="checkbox"
-          className="peer sr-only"
-          checked={done}
-          onChange={() => onToggle(entry.chapter)}
-          aria-label={date ? `${entry.chapter}, completed ${formatShort(date)}` : entry.chapter}
-        />
+        {index}/{entry.days}
+      </button>
+      {done && (
         <span
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[7px] border transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-pcm/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-card ${
-            done ? "border-pcm bg-pcm" : "border-hairlinedark bg-card"
-          }`}
+          role="tooltip"
+          className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-[3px] text-[11px] tabular-nums text-paper opacity-0 shadow-soft transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100"
         >
-          <svg
-            viewBox="0 0 12 12"
-            className="h-3 w-3 text-white"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M2.25 6.4 4.9 9 9.75 3.2"
-              strokeDasharray={12}
-              strokeDashoffset={done ? 0 : 12}
-              className="transition-[stroke-dashoffset] duration-150"
-            />
-          </svg>
+          {formatShort(date)}
         </span>
-        <span className="min-w-[9.5rem] flex-1 text-[15px] leading-snug text-ink">
-          {entry.chapter}
+      )}
+    </span>
+  );
+}
+
+interface PlanRowProps {
+  entry: PlanEntry;
+  planDays: Record<string, string>;
+  chapterDate: string | undefined;
+  todayIndex: number | null;
+  onToggleDay: (chapter: string, index: number) => void;
+}
+
+function PlanRow({ entry, planDays, chapterDate, todayIndex, onToggleDay }: PlanRowProps) {
+  const ticked = Array.from(
+    { length: entry.days },
+    (_, i) => planDays[slotKey(entry.chapter, i + 1)] !== undefined,
+  ).filter(Boolean).length;
+  const complete = ticked === entry.days;
+
+  return (
+    <li
+      className={`rounded-xl px-2.5 py-3 transition-colors duration-150 hover:bg-paperdeep/50 ${
+        complete ? "bg-paperdeep/40" : ""
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1 text-[15px] leading-snug text-ink">{entry.chapter}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {Array.from({ length: entry.days }, (_, i) => {
+            const index = i + 1;
+            return (
+              <DayChip
+                key={index}
+                entry={entry}
+                index={index}
+                date={planDays[slotKey(entry.chapter, index)]}
+                suggested={todayIndex === index}
+                onToggle={onToggleDay}
+              />
+            );
+          })}
         </span>
-        <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-1">
-          {today && (
-            <span className="rounded-full bg-ink/85 px-2 py-0.5 text-[10px] uppercase tracking-wide text-paper">
-              today
-            </span>
-          )}
-          {done && (
-            <span className="rounded-full bg-paper px-2.5 py-0.5 text-[12px] tabular-nums text-muted">
-              {formatShort(date)}
-            </span>
-          )}
-          <span className="text-[12.5px] tabular-nums text-muted">
-            {formatWindow(entry.start, entry.end)}
-            <span className="text-muted/60"> · {entry.days}d</span>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-0.5 text-[12px] text-muted">
+        <span className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${TAG[entry.difficulty]}`}>
+          {entry.difficulty}
+        </span>
+        <span className="tabular-nums">{formatWindow(entry.start, entry.end)}</span>
+        {todayIndex !== null && (
+          <span className="rounded-full bg-ink/85 px-2 py-0.5 text-[10px] uppercase tracking-wide text-paper">
+            today
           </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${TAG[entry.difficulty]}`}
-          >
-            {entry.difficulty}
+        )}
+        {chapterDate && (
+          <span className="rounded-full bg-paper px-2.5 py-0.5 text-[12px] tabular-nums text-muted">
+            {formatShort(chapterDate)}
           </span>
-        </span>
-      </label>
+        )}
+      </div>
     </li>
   );
 }
 
-export default function PlanTab({ chapters, onToggle }: PlanTabProps) {
+export default function PlanTab({ chapters, planDays, onToggleDay }: PlanTabProps) {
   const todayOffset = diffDays(PLAN_START, todayKey());
   const todayInRange = todayOffset >= 0 && todayOffset < PLAN_TOTAL_DAYS;
-  const doneCount = useMemo(
+  const daysDone = useMemo(() => Object.keys(planDays).length, [planDays]);
+  const chaptersDone = useMemo(
     () => PLAN.filter((e) => chapters[e.chapter] !== undefined).length,
     [chapters],
   );
@@ -132,32 +163,44 @@ export default function PlanTab({ chapters, onToggle }: PlanTabProps) {
     [],
   );
 
+  const todayIndexOf = (entry: PlanEntry): number | null =>
+    todayInRange && todayOffset >= entry.offset && todayOffset < entry.offset + entry.days
+      ? todayOffset - entry.offset + 1
+      : null;
+
   return (
     <div>
       <section aria-label="Plan summary" className="card p-5 sm:p-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <h2 className="font-serif text-[19px] font-medium text-ink">
             {formatWindow(PLAN_START, PLAN_END)} 2026
           </h2>
-          <span className="text-[13px] tabular-nums text-muted">
-            <span className="text-ink">{doneCount}</span> / {PCM_TOTAL} done · {PLAN_TOTAL_DAYS}{" "}
-            days
-          </span>
+          <div className="text-right">
+            <div className="text-[13px] tabular-nums text-muted">
+              <span className="font-serif text-[26px] font-medium leading-none text-ink">
+                {daysDone}
+              </span>{" "}
+              / {PLAN_TOTAL_DAYS} days
+            </div>
+            <div className="mt-1 text-[12px] tabular-nums text-muted/80">
+              {chaptersDone} / {PCM_TOTAL} chapters
+            </div>
+          </div>
         </div>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-          Every chapter gets days by weight — harder chapters run longer, lighter ones shorter. A
-          reference for pacing, not a deadline.
+          Divided into single study days — a hard chapter gets 3, a medium 2, an easy 1. Tick each
+          day as it happens; when all of a chapter&apos;s days are ticked, it counts as done.
         </p>
 
         <div data-ribbon className="relative mt-5" aria-hidden="true">
-          <div className="flex h-2.5 gap-[2px] overflow-hidden rounded-full bg-paperdeep p-[2px]">
-            {PLAN.map((e) => {
-              const done = chapters[e.chapter] !== undefined;
+          <div className="flex h-2.5 gap-px overflow-hidden rounded-full bg-paperdeep p-[2px] sm:h-3 sm:gap-[2px]">
+            {PLAN_DAYS.map((d) => {
+              const done = planDays[slotKey(d.chapter, d.index)] !== undefined;
               return (
                 <span
-                  key={e.chapter}
-                  style={{ flexGrow: e.days, flexBasis: 0 }}
-                  className={`rounded-full transition-opacity duration-150 ${DOT[e.difficulty]} ${
+                  key={d.offset}
+                  style={{ flexGrow: 1, flexBasis: 0 }}
+                  className={`rounded-full transition-opacity duration-150 ${DOT[d.difficulty]} ${
                     done ? "" : "opacity-20"
                   }`}
                 />
@@ -197,11 +240,10 @@ export default function PlanTab({ chapters, onToggle }: PlanTabProps) {
               <PlanRow
                 key={e.chapter}
                 entry={e}
-                date={chapters[e.chapter]}
-                today={
-                  todayInRange && todayOffset >= e.offset && todayOffset < e.offset + e.days
-                }
-                onToggle={onToggle}
+                planDays={planDays}
+                chapterDate={chapters[e.chapter]}
+                todayIndex={todayIndexOf(e)}
+                onToggleDay={onToggleDay}
               />
             ))}
           </ul>

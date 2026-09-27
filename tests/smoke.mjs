@@ -206,16 +206,17 @@ try {
   assert.ok(!logText.includes("(Hifdh)"), "no Hifdh entries yet");
   assert.ok(logText.includes("Kinematics 1D & Vectors, Mole Concept (PCM)"), "curriculum order");
 
-  // --- Plan tab -------------------------------------------------------------------
+  // --- Plan tab: divided into single study days ---------------------------------
   step("Plan tab");
   const planTab = [...doc.querySelectorAll('[role="tab"]')].find((b) => b.textContent === "Plan");
   planTab.click();
-  assert.ok(
-    await waitFor(() => doc.querySelectorAll("main input[type='checkbox']").length === 51),
-    "plan renders all 51 chapters",
-  );
+  const dayChips = () =>
+    [...doc.querySelectorAll("main button[aria-pressed]")].filter((b) =>
+      b.getAttribute("aria-label").includes(", day "),
+    );
+  assert.ok(await waitFor(() => dayChips().length === 95), "95 study-day chips across the plan");
   const planText = () => doc.querySelector("main").textContent.replace(/\s+/g, " ");
-  assert.ok(planText().includes("95 days"), "summary shows 95 days");
+  assert.ok(planText().includes("/ 95 days"), "summary counts 95 days");
   assert.ok(
     planText().includes("28 Sep") && planText().includes("31 Dec"),
     "28 Sep – 31 Dec range shown",
@@ -225,14 +226,38 @@ try {
   }
   assert.equal(
     doc.querySelectorAll("[data-ribbon] > div > span").length,
-    51,
-    "ribbon has 51 segments",
+    95,
+    "ribbon has 95 day segments",
   );
-  // toggling from the plan updates the shared ledger
-  doc.querySelector('input[aria-label="Gravitation"]').click();
-  assert.ok(await waitFor(() => headerText(doc).includes("3 / 51")), "plan toggle -> 3 / 51");
-  const gravRow = doc.querySelector('input[aria-label^="Gravitation"]').closest("li");
-  assert.match(gravRow.textContent, /\d{1,2} [A-Z][a-z]{2}/, "done date chip in plan row");
+
+  // chapters ticked in PCM auto-show their study days
+  assert.equal(
+    doc.querySelector('[aria-label^="Mole Concept, day 1"]').getAttribute("aria-pressed"),
+    "true",
+    "PCM tick filled the chapter's days",
+  );
+
+  // Gravitation: tick day by day — 1/2 then 2/2 completes the chapter
+  doc.querySelector('[aria-label^="Gravitation, day 1"]').click();
+  await new Promise((r) => setTimeout(r, 250));
+  assert.ok(headerText(doc).includes("2 / 51"), "still 2 / 51 after day 1 of 2");
+  doc.querySelector('[aria-label^="Gravitation, day 2"]').click();
+  assert.ok(await waitFor(() => headerText(doc).includes("3 / 51")), "3 / 51 after day 2 of 2");
+  const filledSegments = [...doc.querySelectorAll("[data-ribbon] > div > span")].filter(
+    (seg) => !seg.className.includes("opacity-20"),
+  ).length;
+  assert.equal(filledSegments, 5, "5 study days filled: 1 + 2 + 2");
+  const savedPlan = JSON.parse(dom.window.localStorage.getItem("ledger"));
+  assert.ok(savedPlan.planDays["Gravitation#1"] && savedPlan.planDays["Gravitation#2"], "day slots saved");
+  assert.ok(savedPlan.chapters["Gravitation"], "chapter recorded complete by its last day");
+
+  // the PCM tab reflects the plan's day ticks
+  const pcmTabBack = [...doc.querySelectorAll('[role="tab"]')].find((b) => b.textContent === "PCM");
+  pcmTabBack.click();
+  assert.ok(
+    await waitFor(() => doc.querySelector('input[aria-label^="Gravitation"]').checked === true),
+    "PCM checkbox reflects plan completion",
+  );
 
   // --- Reload: state comes back from localStorage --------------------------------
   step("reload from saved state");
@@ -248,6 +273,21 @@ try {
   assert.ok(
     await waitFor(() => doc.querySelector('input[aria-label^="Mole Concept"]')?.checked === true),
     "Mole Concept still checked",
+  );
+
+  // study days survive the reload too
+  const planTab2 = [...doc.querySelectorAll('[role="tab"]')].find((b) => b.textContent === "Plan");
+  planTab2.click();
+  assert.ok(
+    await waitFor(
+      () =>
+        [...doc.querySelectorAll("main button[aria-pressed]")].filter(
+          (b) =>
+            b.getAttribute("aria-label").includes(", day ") &&
+            b.getAttribute("aria-pressed") === "true",
+        ).length === 5,
+    ),
+    "5 study-day chips restored after reload",
   );
   dom.window.close();
 

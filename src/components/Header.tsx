@@ -42,7 +42,7 @@ export default function Header({ hifdhDone, pcmDone }: { hifdhDone: number; pcmD
               <span className="h-2.5 w-2.5 rounded-[7px] bg-hifdh" />
               <span className="h-2.5 w-2.5 rounded-[7px] bg-pcm" />
             </span>
-            <h1 className="font-serif text-[40px] font-medium leading-none tracking-tight text-ink">
+            <h1 className="font-serif text-[40px] font-medium italic leading-none tracking-tight text-ink">
               Ledger
             </h1>
           </div>

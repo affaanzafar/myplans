@@ -10,9 +10,11 @@ import Footer from "./Footer";
 import {
   emptyState,
   loadState,
+  normalizeState,
   saveState,
   toggleChapter,
   togglePage,
+  togglePlanDay,
   type LedgerState,
 } from "@/lib/state";
 
@@ -47,8 +49,12 @@ export default function LedgerApp() {
     setState((prev) => (prev === null ? prev : toggleChapter(prev, chapter)));
   }, []);
 
+  const onTogglePlanDay = useCallback((chapter: string, index: number) => {
+    setState((prev) => (prev === null ? prev : togglePlanDay(prev, chapter, index)));
+  }, []);
+
   const onRestore = useCallback((restored: LedgerState) => {
-    setState(restored);
+    setState(normalizeState(restored));
   }, []);
 
   const current = state ?? emptyState();
@@ -95,7 +101,13 @@ export default function LedgerApp() {
           <div key={tab} className="tab-content">
             {tab === "hifdh" && <HifdhTab pages={current.pages} onToggle={onTogglePage} />}
             {tab === "pcm" && <PcmTab chapters={current.chapters} onToggle={onToggleChapter} />}
-            {tab === "plan" && <PlanTab chapters={current.chapters} onToggle={onToggleChapter} />}
+            {tab === "plan" && (
+              <PlanTab
+                chapters={current.chapters}
+                planDays={current.planDays}
+                onToggleDay={onTogglePlanDay}
+              />
+            )}
             {tab === "log" && <LogTab state={current} />}
           </div>
         </main>

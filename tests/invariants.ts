@@ -30,11 +30,22 @@ import {
   PLAN_END,
   PLAN_TOTAL_DAYS,
   PLAN_STATS,
+  PLAN_DAYS,
+  PLAN_DAY_COUNT,
   DIFFICULTY,
   PLAN_MONTHS,
   formatWindow,
 } from "../src/lib/plan";
-import { isValidState, emptyState, togglePage, toggleChapter } from "../src/lib/state";
+import {
+  isValidState,
+  emptyState,
+  togglePage,
+  toggleChapter,
+  togglePlanDay,
+  normalizeState,
+  slotKey,
+  type LedgerState,
+} from "../src/lib/state";
 import { buildLogDays, formatPageList } from "../src/lib/log";
 
 // --- Hifdh: exactly 535 tiles -------------------------------------------------
@@ -180,8 +191,63 @@ s = togglePage(s, 322);
 assert.equal(Object.keys(s.pages).length, 0);
 s = toggleChapter(s, "Mole Concept");
 assert.equal(Object.keys(s.chapters).length, 1);
+// ticking a chapter also ticks all its study days
+assert.deepEqual(Object.keys(s.planDays).sort(), ["Mole Concept#1", "Mole Concept#2"]);
 s = toggleChapter(s, "Mole Concept");
 assert.equal(Object.keys(s.chapters).length, 0);
+assert.equal(Object.keys(s.planDays).length, 0);
+
+// --- Study days: 1/3 of a hard chapter, 1/2 of a medium, 1/1 of an easy -------
+
+assert.equal(PLAN_DAYS.length, 95, "95 study days");
+assert.equal(PLAN_DAYS[0].date, "2026-09-28");
+assert.equal(PLAN_DAYS[94].date, "2026-12-31");
+assert.equal(PLAN_DAYS[0].chapter, "Kinematics 1D & Vectors");
+assert.equal(PLAN_DAYS[94].chapter, "Conic Sections, Probability & Statistics");
+assert.equal(PLAN_DAY_COUNT["Kinematics 1D & Vectors"], 1, "easy: 1 day (1/1)");
+assert.equal(PLAN_DAY_COUNT["Mole Concept"], 2, "medium: 2 days (1/2)");
+assert.equal(PLAN_DAY_COUNT["Rotational Motion (Rigid Bodies)"], 3, "hard: 3 days (1/3)");
+let slotTotal = 0;
+for (const chapter of ALL_CHAPTERS) slotTotal += PLAN_DAY_COUNT[chapter];
+assert.equal(slotTotal, 95);
+
+// day-by-day completion
+let d = emptyState();
+d = togglePlanDay(d, "Rotational Motion (Rigid Bodies)", 1);
+assert.equal(d.chapters["Rotational Motion (Rigid Bodies)"], undefined, "not done after 1/3");
+d = togglePlanDay(d, "Rotational Motion (Rigid Bodies)", 2);
+assert.equal(d.chapters["Rotational Motion (Rigid Bodies)"], undefined, "not done after 2/3");
+d = togglePlanDay(d, "Rotational Motion (Rigid Bodies)", 3);
+assert.ok(d.chapters["Rotational Motion (Rigid Bodies)"], "done after 3/3");
+d = togglePlanDay(d, "Rotational Motion (Rigid Bodies)", 1);
+assert.equal(d.chapters["Rotational Motion (Rigid Bodies)"], undefined, "unticking a day undoes it");
+assert.ok(d.planDays[slotKey("Rotational Motion (Rigid Bodies)", 2)], "other days keep their dates");
+
+// plan-day validation
+assert.ok(isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "Mole Concept#1": "2026-10-01" } }));
+assert.ok(!isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "Not a chapter#1": "2026-10-01" } }));
+assert.ok(!isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "Mole Concept#3": "2026-10-01" } }), "Mole Concept has only 2 days");
+assert.ok(!isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "Mole Concept#0": "2026-10-01" } }));
+assert.ok(!isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "Mole Concept#1": "2026-02-30" } }));
+assert.ok(!isValidState({ version: 1, pages: {}, chapters: {}, planDays: { "no separator": "2026-10-01" } }));
+
+// normalization: old backups and day/chapter coherence
+const legacy = {
+  version: 1,
+  pages: {},
+  chapters: { "Mole Concept": "2026-10-05" },
+} as unknown as LedgerState;
+const n1 = normalizeState(legacy);
+assert.equal(n1.planDays["Mole Concept#1"], "2026-10-05", "legacy chapter backfills its days");
+assert.equal(n1.planDays["Mole Concept#2"], "2026-10-05");
+
+const n2 = normalizeState({
+  version: 1,
+  pages: {},
+  chapters: {},
+  planDays: { "Mole Concept#1": "2026-10-01", "Mole Concept#2": "2026-10-03" },
+});
+assert.equal(n2.chapters["Mole Concept"], "2026-10-03", "all days ticked completes the chapter, dated by the last day");
 
 // --- Log ------------------------------------------------------------------------
 
@@ -196,6 +262,7 @@ const days = buildLogDays({
   version: 1,
   pages: { "322": "2026-02-19", "323": "2026-02-19", "324": "2026-02-19", "2": "2026-02-10" },
   chapters: { "Mole Concept": "2026-02-19", "Gravitation": "2026-02-18" },
+  planDays: {},
 });
 assert.equal(days.length, 3);
 assert.equal(days[0].date, "2026-02-19");
@@ -295,5 +362,5 @@ assert.equal(formatWindow("2026-10-14", "2026-10-16"), "14\u201316 Oct");
 assert.equal(formatWindow("2026-09-30", "2026-10-02"), "30 Sep \u2013 2 Oct");
 
 console.log(
-  "All invariants hold — Hifdh: 535 page tiles across 64 surah sections (Al-Baqarah 2–49, 48 tiles); PCM: 51 chapters (17 + 18 + 16); Plan: 51 chapters across 95 days, 28 Sep – 31 Dec 2026 (14 hard · 26 medium · 11 easy).",
+  "All invariants hold — Hifdh: 535 page tiles across 64 surah sections (Al-Baqarah 2–49, 48 tiles); PCM: 51 chapters (17 + 18 + 16); Plan: 51 chapters across 95 study days, 28 Sep – 31 Dec 2026 (14 hard · 26 medium · 11 easy; hard 1/3, medium 1/2, easy 1/1).",
 );

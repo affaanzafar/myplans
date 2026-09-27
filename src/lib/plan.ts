@@ -147,6 +147,33 @@ export const PLAN_STATS: { hard: number; medium: number; easy: number } = {
   easy: PLAN.filter((e) => e.difficulty === "easy").length,
 };
 
+/** Study-day slots per chapter: hard 3, medium 2, easy 1 (minus compactions). */
+export const PLAN_DAY_COUNT: Record<string, number> = Object.fromEntries(
+  PLAN.map((e) => [e.chapter, e.days]),
+);
+
+export interface PlanDay {
+  chapter: string;
+  difficulty: Difficulty;
+  /** 1-based day within the chapter: the "1" of "1/3". */
+  index: number;
+  /** 0-based day within the whole plan (0–94). */
+  offset: number;
+  /** Suggested calendar date for this study day. */
+  date: string;
+}
+
+/** All 95 study days, in order — the plan divided into days. */
+export const PLAN_DAYS: PlanDay[] = PLAN.flatMap((e) =>
+  Array.from({ length: e.days }, (_, i) => ({
+    chapter: e.chapter,
+    difficulty: e.difficulty,
+    index: i + 1,
+    offset: e.offset + i,
+    date: addDaysKey(PLAN_START, e.offset + i),
+  })),
+);
+
 const MONTH_NAMES = [
   "January",
   "February",

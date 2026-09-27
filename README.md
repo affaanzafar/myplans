@@ -47,20 +47,24 @@ Organic 5), Mathematics 16 — with per-subject counters, completion dates,
 and a small three-dot difficulty rating on every chapter.
 
 ### Plan
-All 51 chapters divided across **28 September – 31 December 2026** — 95 days
-— weighted by difficulty:
+All 51 chapters divided across **28 September – 31 December 2026** — into
+**95 individual study days**, weighted by difficulty:
 
-- **Hard** chapters get 3 days (2 when compact): 14 chapters
-- **Medium** chapters get 2 days (1 when compact): 26 chapters
-- **Easy** chapters get 1 day: 11 chapters
+- **Hard** chapters get 3 study days (2 when compact): 14 chapters
+- **Medium** chapters get 2 study days (1 when compact): 26 chapters
+- **Easy** chapters get 1 study day: 11 chapters
 
-The windows tile the period exactly: Physics runs 28 Sep – 1 Nov, Chemistry
-2 Nov – 3 Dec, Mathematics 4 Dec – 31 Dec. A ribbon at the top shows the
-whole quarter at a glance — each segment is a chapter, sized by its days and
-coloured by difficulty, filling in as chapters are completed; a small "today"
-marker appears on the current window from 28 Sep onwards. Chapters can be
-ticked off straight from the plan. It is a reference for pacing, not a
-deadline: the app never compares you against it.
+Each chapter shows its days as tickable chips labelled `1/3`, `2/3`, `3/3`
+(medium `1/2`→`2/2`, easy `1/1`), coloured by difficulty; hover a ticked day
+to see its date. Tick each study day as it happens — when all of a chapter's
+days are ticked, it counts as done (dated by its last day), and the same
+completion shows on the PCM tab. Ticking a chapter on the PCM tab ticks all
+its days. The windows still tile the period exactly: Physics 28 Sep – 1 Nov,
+Chemistry 2 Nov – 3 Dec, Mathematics 4 Dec – 31 Dec. A ribbon at the top
+shows all 95 days at a glance — one segment per day, coloured by difficulty,
+filling in day by day, with a "today" marker from 28 Sep and a quiet ring on
+the suggested day of the current chapter. It is a reference for pacing, not
+a deadline: the app never compares you against it.
 
 ### Log
 Everything recorded, grouped by day, newest first, with bookish page ranges
