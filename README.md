@@ -82,6 +82,19 @@ npm run test:smoke    # end-to-end against ./out (run after npm run build):
 npm run typecheck
 ```
 
+## Single-file version
+
+`npm run build` also produces **`standalone/ledger.html`** (~1.2 MB) — the
+entire app in one self-contained HTML file: all CSS, all JavaScript, both
+Fraunces font faces and the icon are inlined as data URIs. Double-click it
+from anywhere — a USB stick, a phone, a laptop with no connection — and it
+runs straight from `file://`. No server, no internet, nothing to install.
+State saves to that file's own browser storage and persists across reopens.
+
+`scripts/build-standalone.mjs` generates it from `out/index.html` and fails
+the build if any external reference survives. The same file is also written
+to `out/ledger.html`, so the preview serves it at `/ledger.html`.
+
 ## Design
 
 Warm paper, modern finish: a sticky glass tab bar with a segmented control,

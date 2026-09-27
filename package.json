@@ -5,7 +5,7 @@
   "description": "A quiet, single-user ledger for Hifdh pages and JEE chapters. It records; it never demands.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/build-standalone.mjs",
     "start": "node scripts/serve.mjs",
     "test": "tsx tests/invariants.ts",
     "test:smoke": "node tests/smoke.mjs",
