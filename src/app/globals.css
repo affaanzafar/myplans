@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+/* Fraunces is a variable font with an optical-size axis. */
+.font-serif {
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background-color: #ece5d8;
+}
+
+/* Quiet, consistent keyboard focus. */
+:focus-visible {
+  outline: 2px solid rgba(38, 34, 27, 0.45);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tab changes: a quick, calm settle. */
+@keyframes tab-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tab-content {
+  animation: tab-fade 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-content {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
